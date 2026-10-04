@@ -1,11 +1,17 @@
-const STORAGE_KEY = 'todoListApp.tasks';
+const STORAGE_KEY = 'modernTodoApp.tasks';
+const THEME_KEY = 'modernTodoApp.theme';
 
 const todoForm = document.getElementById('todo-form');
 const todoInput = document.getElementById('todo-input');
 const todoList = document.getElementById('todo-list');
 const clearCompletedButton = document.getElementById('clear-completed');
+const themeToggle = document.getElementById('theme-toggle');
+const taskCount = document.getElementById('task-count');
+const doneCount = document.getElementById('done-count');
+const filterButtons = document.querySelectorAll('.filter-btn');
 
 let tasks = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+let activeFilter = 'all';
 
 function saveTasks() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
@@ -20,35 +26,61 @@ function escapeHtml(text) {
     .replace(/'/g, '&#039;');
 }
 
+function getVisibleTasks() {
+  if (activeFilter === 'active') {
+    return tasks.filter((task) => !task.completed);
+  }
+
+  if (activeFilter === 'completed') {
+    return tasks.filter((task) => task.completed);
+  }
+
+  return tasks;
+}
+
+function updateSummary() {
+  const remaining = tasks.filter((task) => !task.completed).length;
+  const completed = tasks.filter((task) => task.completed).length;
+
+  taskCount.textContent = `${remaining} task${remaining === 1 ? '' : 's'}`;
+  doneCount.textContent = String(completed);
+}
+
 function renderTasks() {
-  if (tasks.length === 0) {
-    todoList.innerHTML = '<li class="empty-state">No tasks yet. Add one above!</li>';
+  const visibleTasks = getVisibleTasks();
+
+  if (visibleTasks.length === 0) {
+    todoList.innerHTML = '<li class="empty-state">No tasks match this filter yet.</li>';
+    updateSummary();
     return;
   }
 
-  todoList.innerHTML = tasks
+  todoList.innerHTML = visibleTasks
     .map(
       (task) => `
         <li class="task-item ${task.completed ? 'completed' : ''}" data-id="${task.id}">
-          <label>
-            <input type="checkbox" ${task.completed ? 'checked' : ''} />
+          <div class="task-main">
+            <input type="checkbox" ${task.completed ? 'checked' : ''} aria-label="Mark task complete" />
             <span class="task-text">${escapeHtml(task.text)}</span>
-          </label>
-          <button type="button" class="delete-btn">Delete</button>
+          </div>
+          <button type="button" class="delete-btn" aria-label="Delete task">Delete</button>
         </li>
       `
     )
     .join('');
+
+  updateSummary();
 }
 
 function addTask(text) {
   const trimmedText = text.trim();
 
   if (!trimmedText) {
+    todoInput.focus();
     return;
   }
 
-  tasks.push({
+  tasks.unshift({
     id: Date.now(),
     text: trimmedText,
     completed: false,
@@ -82,21 +114,18 @@ function clearCompletedTasks() {
   renderTasks();
 }
 
+function applyTheme(theme) {
+  const isDark = theme === 'dark';
+  document.body.classList.toggle('dark', isDark);
+  themeToggle.textContent = isDark ? '☀️' : '🌙';
+  localStorage.setItem(THEME_KEY, theme);
+}
+
 todoForm.addEventListener('submit', (event) => {
   event.preventDefault();
   addTask(todoInput.value);
   todoInput.value = '';
   todoInput.focus();
-});
-
-todoList.addEventListener('click', (event) => {
-  const button = event.target.closest('.delete-btn');
-  const taskItem = event.target.closest('.task-item');
-
-  if (button && taskItem) {
-    const taskId = Number(taskItem.dataset.id);
-    deleteTask(taskId);
-  }
 });
 
 todoList.addEventListener('change', (event) => {
@@ -109,6 +138,35 @@ todoList.addEventListener('change', (event) => {
   }
 });
 
+todoList.addEventListener('click', (event) => {
+  const deleteButton = event.target.closest('.delete-btn');
+  const taskItem = event.target.closest('.task-item');
+
+  if (deleteButton && taskItem) {
+    const taskId = Number(taskItem.dataset.id);
+    deleteTask(taskId);
+  }
+});
+
 clearCompletedButton.addEventListener('click', clearCompletedTasks);
 
+filterButtons.forEach((button) => {
+  button.addEventListener('click', () => {
+    activeFilter = button.dataset.filter;
+
+    filterButtons.forEach((btn) => {
+      btn.classList.toggle('active', btn === button);
+    });
+
+    renderTasks();
+  });
+});
+
+themeToggle.addEventListener('click', () => {
+  const nextTheme = document.body.classList.contains('dark') ? 'light' : 'dark';
+  applyTheme(nextTheme);
+});
+
+const savedTheme = localStorage.getItem(THEME_KEY) || 'light';
+applyTheme(savedTheme);
 renderTasks();

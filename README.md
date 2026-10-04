@@ -1,19 +1,21 @@
-# To-Do List App
+# Modern To-Do List
 
-A beginner-friendly to-do list application that saves tasks in the browser using `localStorage`.
+A polished to-do list app with a clean interface and browser-based local storage.
 
 ## Features
-- Add tasks
+- Add new tasks
 - Mark tasks as complete
 - Delete tasks
 - Clear completed tasks
-- Data stays saved when the page is refreshed
+- Filter tasks by All, Active, and Completed
+- Dark mode toggle
+- Tasks are saved in `localStorage`
 
 ## Run it locally
-1. Open `index.html` in a browser.
-2. Add a task and start organizing your work.
+1. Open `index.html` in your browser.
+2. Start adding tasks.
 
 ## Files
-- `index.html` – app layout
-- `style.css` – styling
-- `script.js` – logic for adding, deleting, and saving tasks
+- `index.html` – page structure
+- `style.css` – modern styling and dark mode
+- `script.js` – task logic, filtering, and local storage
